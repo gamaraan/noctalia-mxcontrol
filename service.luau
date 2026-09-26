@@ -16,6 +16,7 @@ local helper = (noctalia.pluginDir() or ".") .. "/backend/mxctl.py"
 local runtimeDir = (noctalia.getenv("XDG_RUNTIME_DIR") or "") .. "/omarchy-mx"
 
 local lastRaw = nil
+local lastTs = nil
 local reading = false
 local ticks = 0
 local seq = 0
@@ -33,6 +34,7 @@ local function readStatus()
 	local started = noctalia.readFileAsync(statusPath(), function(contents)
 		reading = false
 		if contents == nil then
+			lastTs = nil
 			if lastRaw ~= nil then
 				lastRaw = nil
 				noctalia.state.set(shared.STATUS_KEY, nil)
@@ -45,6 +47,7 @@ local function readStatus()
 		lastRaw = contents
 		local decoded = noctalia.json.decode(contents)
 		if type(decoded) == "table" then
+			lastTs = decoded.ts
 			noctalia.state.set(shared.STATUS_KEY, decoded)
 		end
 	end)
@@ -68,17 +71,14 @@ local function startHelper()
 	end, 10000)
 end
 
--- Any serve holds the helper's single lock, whichever path started it, so
--- supervision and teardown match the script name rather than this copy's path.
+-- Liveness is serve's own heartbeat rather than a process-list match, so any
+-- serve counts (it holds the helper's single lock) and a shell that merely
+-- mentions it does not.
 local function supervise()
-	if stopping then
+	if stopping or not shared.helperNeedsStart(lastTs, os.time()) then
 		return
 	end
-	noctalia.processMatches(function(running)
-		if not running and not stopping then
-			startHelper()
-		end
-	end, "mxctl.py", "serve")
+	startHelper()
 end
 
 -- Written under a non-matching name and renamed, so serve never reads half a file.
@@ -102,19 +102,42 @@ local function queueCommand(cmd)
 	end
 end
 
-local ALLOWED_OPS = { set = true, refresh = true }
+-- Ops forwarded to the helper; anything else is dropped.
+local HELPER_OPS = {
+	set = true, refresh = true,
+	["profile-save"] = true, ["profile-apply"] = true, ["profile-delete"] = true,
+	["pointer-set"] = true,
+	["action-save"] = true, ["action-delete"] = true,
+}
+
+-- Open window classes for the shortcut editor's app picker.
+local function listApps()
+	noctalia.runAsync({ "hyprctl", "-j", "clients" }, function(result)
+		if result.exitCode ~= 0 then
+			return
+		end
+		local clients = noctalia.json.decode(result.stdout or "")
+		noctalia.state.set(shared.APPS_KEY, shared.appClasses(clients))
+	end, 5000)
+end
 
 local function onCommand(message)
 	if type(message) ~= "table" or type(message.cmd) ~= "table" then
 		return
 	end
-	if not ALLOWED_OPS[message.cmd.op] then
-		return
-	end
 	if not shared.isFreshNonce(message.nonce, noctalia.nowMs(), COMMAND_MAX_AGE_MS) then
 		return
 	end
-	queueCommand(message.cmd)
+	local op = message.cmd.op
+	if op == "list-apps" then
+		listApps()
+	elseif HELPER_OPS[op] then
+		queueCommand(message.cmd)
+		-- The helper restores the button but keeps its cached Mode; a live read shows it.
+		if op == "action-delete" then
+			queueCommand({ op = "refresh", device = message.cmd.device })
+		end
+	end
 end
 
 noctalia.state.watch(shared.COMMAND_KEY, onCommand)
@@ -131,7 +154,7 @@ function onExit(_signal, reason)
 		return
 	end
 	stopping = true
-	noctalia.runAsync({ "pkill", "-TERM", "-f", "mxctl\\.py serve" })
+	noctalia.runAsync({ "pkill", "-TERM", "-f", shared.HELPER_PATTERN })
 end
 
 noctalia.setUpdateInterval(TICK_MS)

@@ -5,12 +5,12 @@
 
 id = "gamaraan/mx-control"
 name = "MX Control"
-version = "0.1.0"
+version = "0.2.0"
 plugin_api = 24
 author = "gamaraan"
 license = "GPL-2.0-or-later"
 icon = "mouse"
-description = "Battery and HID++ settings for Logitech MX devices (DPI, SmartShift, scrolling, buttons, hosts) through Solaar."
+description = "Battery, HID++ settings, profiles and shortcuts for Logitech MX devices (DPI, SmartShift, scrolling, buttons, hosts, gestures) through Solaar."
 tags = ["hardware", "bar", "panel", "service", "indicator"]
 dependencies = ["python3"]
 
@@ -38,8 +38,8 @@ entry = "widget.luau"
 [[panel]]
 id = "panel"
 entry = "panel.luau"
-width = 460
-height = 600
+width = 600
+height = 640
 placement = "attached"
 position = "auto"
 open_near_click = true

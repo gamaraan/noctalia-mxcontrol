@@ -558,6 +558,13 @@ function M.profilesFor(status, deviceId)
     return out
 end
 
+-- Mirrors the helper's is_mouse_dev; pointer-set is refused for anything else.
+local POINTER_KINDS = { mouse = true, trackball = true, touchpad = true }
+
+function M.supportsAcceleration(device)
+    return type(device) == "table" and POINTER_KINDS[tostring(device.kind or ""):lower()] == true
+end
+
 function M.accelMode(status, deviceId)
     local prefs = type(status) == "table" and type(status.pointer) == "table" and status.pointer[deviceId]
     if type(prefs) == "table" and prefs.acceleration == "mac" then

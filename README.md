@@ -36,12 +36,13 @@ click reads the device again.
 ## Panel
 
 - **Point & scroll** – DPI (a slider when the device reports an evenly spaced DPI
-  list), scroll wheel, thumb wheel, and any other device setting.
+  list), pointer acceleration (system default or macOS-style, applied through Hyprland;
+  mice only), scroll wheel, thumb wheel, and any other device setting.
 - **Buttons & actions** – one group per button with its action and mode.
 - **Easy-Switch** – the paired hosts. Switching takes a second click, because it
   sends the device to the other computer.
-- **Profiles** – pointer acceleration (system default or macOS-style, applied through
-  Hyprland) and named snapshots of the device's settings to save, apply and delete.
+- **Profiles** – named snapshots of the device's settings, including pointer
+  acceleration, to save, apply and delete.
 - **Shortcuts** – give a divertable button a shortcut, a sequence of up to eight, or four
   directional gestures, for all apps or as a per-app override. Shortcuts are sent to the
   focused window through Hyprland. A button's Mode must be Regular to take a shortcut,

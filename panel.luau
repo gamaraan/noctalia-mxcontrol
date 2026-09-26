@@ -232,12 +232,48 @@ local function settingsOn(device, tab)
 	return out
 end
 
+local ACCEL_MODES = { "system", "mac" }
+
+-- A local preference kept by the helper, not a device setting, so it is added
+-- to the Pointer section by hand.
+local function accelerationRow(device, enabled)
+	local k = controlKey(device.id, "pointer-acceleration", nil)
+	local mode = shownValue(k, shared.accelMode(status, device.id))
+	local children = {
+		ui.row({ gap = 8, align = "center" }, {
+			ui.label({ text = tr("pointer.acceleration"), color = "on_surface", flexGrow = 1 }),
+			ui.select({
+				key = k, options = { tr("accel.system"), tr("accel.mac") },
+				selectedIndex = mode == "mac" and 1 or 0, width = 210, enabled = enabled,
+				onChange = function(index, _text)
+					local picked = ACCEL_MODES[(tonumber(index) or 0) + 1]
+					if picked then
+						pending[k] = { value = picked, untilMs = now() + PENDING_MS }
+						send(shared.pointerSet(device.id, picked))
+						render()
+					end
+				end,
+			}),
+		}),
+		ui.label({ text = tr("pointer.acceleration_hint"), fontSize = 11, color = "on_surface_variant", maxLines = 3 }),
+	}
+	local runtime = type(status.pointerRuntime) == "table" and status.pointerRuntime or {}
+	if runtime.error and runtime.error ~= "" then
+		children[#children + 1] = errorNote(runtime.error)
+	end
+	return ui.column({ gap = 4 }, children)
+end
+
 local function pointTab(device, enabled)
 	local grouped = {}
 	for _, setting in ipairs(settingsOn(device, "point")) do
 		local id = shared.sectionFor(setting.name)
 		grouped[id] = grouped[id] or {}
 		table.insert(grouped[id], settingRow(device, setting, enabled))
+	end
+	if shared.supportsAcceleration(device) then
+		grouped.pointer = grouped.pointer or {}
+		table.insert(grouped.pointer, accelerationRow(device, enabled))
 	end
 	local body = {}
 	for _, id in ipairs(shared.sectionsFor("point")) do
@@ -349,8 +385,6 @@ local function hostsTab(device, enabled)
 	return rows
 end
 
-local ACCEL_MODES = { "system", "mac" }
-
 local function saveProfile(device)
 	local name = shared.sanitizeProfileName(profileDraft)
 	if name == nil then
@@ -364,32 +398,6 @@ end
 
 local function profilesTab(device, enabled)
 	local body = {}
-
-	local k = controlKey(device.id, "pointer-acceleration", nil)
-	local mode = shownValue(k, shared.accelMode(status, device.id))
-	local accel = {
-		ui.row({ gap = 8, align = "center" }, {
-			ui.label({ text = tr("profiles.acceleration"), color = "on_surface", flexGrow = 1 }),
-			ui.select({
-				key = k, options = { tr("accel.system"), tr("accel.mac") },
-				selectedIndex = mode == "mac" and 1 or 0, width = 210, enabled = enabled,
-				onChange = function(index, _text)
-					local picked = ACCEL_MODES[(tonumber(index) or 0) + 1]
-					if picked then
-						pending[k] = { value = picked, untilMs = now() + PENDING_MS }
-						send(shared.pointerSet(device.id, picked))
-						render()
-					end
-				end,
-			}),
-		}),
-		ui.label({ text = tr("profiles.acceleration_hint"), fontSize = 11, color = "on_surface_variant", maxLines = 3 }),
-	}
-	local runtime = type(status.pointerRuntime) == "table" and status.pointerRuntime or {}
-	if runtime.error and runtime.error ~= "" then
-		accel[#accel + 1] = errorNote(runtime.error)
-	end
-	body[#body + 1] = section(tr("section.acceleration"), accel)
 
 	local profiles = shared.profilesFor(status, device.id)
 	local rows = {}

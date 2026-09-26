@@ -35,7 +35,6 @@
     "buttons": "Buttons",
     "other": "Other",
     "hosts": "Easy-Switch hosts",
-    "acceleration": "Pointer acceleration",
     "profiles": "Saved profiles",
     "save_profile": "Save current settings",
     "assignments": "Assigned shortcuts",
@@ -61,9 +60,11 @@
     "system": "System default",
     "mac": "macOS-style"
   },
+  "pointer": {
+    "acceleration": "Pointer acceleration",
+    "acceleration_hint": "macOS-style gives slow movements precision and fast ones reach, scaled to the DPI. It is applied through Hyprland's input settings for this mouse."
+  },
   "profiles": {
-    "acceleration": "Acceleration",
-    "acceleration_hint": "macOS-style gives slow movements precision and fast ones reach, scaled to the DPI. It is applied through Hyprland's input settings for this mouse.",
     "apply": "Apply",
     "delete": "Delete",
     "confirm_delete": "Click to confirm",

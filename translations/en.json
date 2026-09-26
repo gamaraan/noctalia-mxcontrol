@@ -1,0 +1,51 @@
+{
+  "settings": {
+    "show_value": {
+      "label": "Show battery level",
+      "description": "Show the battery percentage next to the mouse icon."
+    }
+  },
+  "state": {
+    "starting": "Starting the MX helper…",
+    "stale": "The MX helper is not responding.",
+    "no_solaar": "Solaar is not installed.",
+    "no_access": "Found a Logitech device but cannot open it.",
+    "no_devices": "No MX devices found."
+  },
+  "hint": {
+    "no_solaar": "Install it with `sudo pacman -S solaar`, then turn the mouse off and on.",
+    "no_access": "Solaar's udev rules apply on reconnect: turn the mouse off and on, or run `sudo udevadm trigger`."
+  },
+  "tab": {
+    "point": "Point & scroll",
+    "buttons": "Buttons & actions",
+    "hosts": "Easy-Switch"
+  },
+  "caption": {
+    "action": "Action",
+    "mode": "Mode"
+  },
+  "section": {
+    "pointer": "Pointer",
+    "scroll": "Scroll wheel",
+    "thumb": "Thumb wheel",
+    "buttons": "Buttons",
+    "other": "Other",
+    "hosts": "Easy-Switch hosts"
+  },
+  "panel": {
+    "connection": "Connection",
+    "offline": "Offline",
+    "offline_hint": "Turn the device on or wake it to change its settings.",
+    "reading": "Reading settings…",
+    "refresh": "Read again from the device",
+    "host": "Host",
+    "this_computer": "This computer",
+    "switch": "Switch",
+    "confirm_switch": "Click to confirm",
+    "empty_slot": "Empty",
+    "empty_tab": "This device has no settings here.",
+    "no_hosts": "This device has no Easy-Switch hosts.",
+    "hosts_hint": "Switching sends the device to that computer. Use its Easy-Switch button to come back."
+  }
+}

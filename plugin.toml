@@ -1,0 +1,47 @@
+# MX Control for Noctalia: a port of the Omarchy plugin by Zach Wilke,
+#   https://github.com/zachwilke/omarchy-mxcontrol
+# backend/ is that plugin's Python helper, unchanged (see UPSTREAM.md); the Luau
+# UI is new. GPL-2.0-or-later like the original.
+
+id = "gamaraan/mx-control"
+name = "MX Control"
+version = "0.1.0"
+plugin_api = 24
+author = "gamaraan"
+license = "GPL-2.0-or-later"
+icon = "mouse"
+description = "Battery and HID++ settings for Logitech MX devices (DPI, SmartShift, scrolling, buttons, hosts) through Solaar."
+tags = ["hardware", "bar", "panel", "service", "indicator"]
+dependencies = ["python3"]
+
+# Keeps `mxctl.py serve` running and is the only entry that spawns processes or
+# writes to the helper's runtime directory.
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "mx"
+entry = "widget.luau"
+
+  [widget.actions]
+  left = "panel-toggle gamaraan/mx-control:panel"
+  right = "plugin gamaraan/mx-control:service all refresh"
+
+  [[widget.setting]]
+  key = "show_value"
+  type = "bool"
+  label_key = "settings.show_value.label"
+  description_key = "settings.show_value.description"
+  default = true
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 460
+height = 600
+placement = "attached"
+position = "auto"
+open_near_click = true
+dismiss_on_outside_click = true
+capture_keys = ["escape"]

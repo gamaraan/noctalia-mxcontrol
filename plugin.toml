@@ -5,14 +5,16 @@
 
 id = "gamaraan/mx-control"
 name = "MX Control"
-version = "0.2.0"
+version = "0.2.1"
 plugin_api = 24
 author = "gamaraan"
 license = "GPL-2.0-or-later"
 icon = "mouse"
-description = "Battery, HID++ settings, profiles and shortcuts for Logitech MX devices (DPI, SmartShift, scrolling, buttons, hosts, gestures) through Solaar."
-tags = ["hardware", "bar", "panel", "service", "indicator"]
-dependencies = ["python3"]
+description = "Battery, DPI, SmartShift, buttons, Easy-Switch, profiles and gesture shortcuts for Logitech MX devices via Solaar."
+tags = ["hardware", "bar", "panel", "service", "indicator", "hyprland"]
+# Informational only: the helper runs on python3 with Solaar's libraries;
+# hyprctl lists open windows for per-app shortcuts, pkill stops the helper.
+dependencies = ["python3", "solaar", "hyprctl", "pkill"]
 
 # Keeps `mxctl.py serve` running and is the only entry that spawns processes or
 # writes to the helper's runtime directory.

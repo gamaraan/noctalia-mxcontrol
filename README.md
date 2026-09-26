@@ -80,7 +80,8 @@ Reads the devices again, the same as right-clicking the capsule.
 - **Files:** the helper writes `status.json` and short-lived `cmd-*.json` command files in
   `$XDG_RUNTIME_DIR/omarchy-mx/` (mode 0700), and profiles, pointer preferences and
   shortcuts in `~/.config/omarchy-mx/` (mode 0600). Profiles and shortcuts saved with the
-  Omarchy plugin carry over.
+  Omarchy plugin carry over. Through Solaar's libraries it also records the settings it
+  changes in `~/.config/solaar/config.yaml`, as the Solaar app does.
 - **Devices and compositor:** the helper opens Logitech `/dev/hidraw*` devices and reads
   sysfs. Shortcuts and pointer acceleration go through Hyprland's IPC socket. There is no
   network access.

@@ -1,65 +1,89 @@
-# MX Control for Noctalia
+# MX Control
 
-Battery and HID++ settings for Logitech MX mice in the [Noctalia](https://noctalia.dev)
-bar: DPI, SmartShift, scroll and thumb wheel, button actions and diversion, and
-Easy-Switch hosts. A port of [omarchy-mxcontrol](https://github.com/zachwilke/omarchy-mxcontrol);
-the Python helper in `backend/` is upstream's, unchanged (see [UPSTREAM.md](UPSTREAM.md)).
+Battery, DPI, SmartShift, scrolling, button remaps, Easy-Switch hosts, saved profiles and
+gesture shortcuts for Logitech MX mice and keyboards, from the Noctalia bar. It talks to
+the devices over HID++ through Solaar's libraries, so it works over Bluetooth, USB, Bolt
+and Unifying.
+
+A port of [omarchy-mxcontrol](https://github.com/zachwilke/omarchy-mxcontrol) by Zach
+Wilke: its Python helper ships unchanged in `backend/` (see [UPSTREAM.md](UPSTREAM.md)),
+and the Noctalia widget, panel and service are new.
+
+## Plugin
+
+| Field | Value |
+| --- | --- |
+| ID | `gamaraan/mx-control` |
+| Entries | Bar widget: `mx`; panel: `panel`; service: `service` |
 
 ## Requirements
 
-- Noctalia with plugin API 24
-- `python3`
-- [Solaar](https://pwr-solaar.github.io/Solaar/) (`sudo pacman -S solaar`) for its HID++
-  libraries and the udev rules that open `/dev/hidraw*` to your user. Turn the mouse off
-  and on once after installing so the rules apply.
+- `python3` runs the helper in `backend/`.
+- `solaar` provides the HID++ libraries the helper imports, and the udev rules that open
+  `/dev/hidraw*` to your user (`sudo pacman -S solaar` on Arch). Turn the device off and on
+  once after installing it so the rules apply. Without Solaar the plugin only shows
+  devices and battery.
+- `hyprctl` lists open windows for per-app shortcuts. Shortcuts and pointer acceleration
+  are applied through Hyprland, so they need a Hyprland session; every hardware setting
+  works on any compositor.
+- `pkill` stops the helper when the plugin is disabled.
+- A Logitech MX device (or another HID++ device Solaar supports).
 
-Without Solaar the helper can only list devices and battery.
+## Usage
 
-## Install from this checkout
+Add **MX Control** to a bar in Settings → Bar. The capsule shows the mouse battery; it
+turns the error colour at 15% and shows a crossed-out mouse when the device is offline. Left click opens the
+panel, right click reads the device again. The panel also opens with:
 
-Noctalia plugin sources are catalogs, so a local checkout needs a small catalog that
-links to it:
-
-```bash
-mkdir -p ~/.local/share/noctalia-dev
-ln -sfn "$PWD" ~/.local/share/noctalia-dev/mx-control
-# write ~/.local/share/noctalia-dev/catalog.toml with a [[plugin]] row for
-# gamaraan/mx-control (id, name, version, author, license, icon, description,
-# plugin_api, tags, updated_at, added_at)
-noctalia msg plugins source add mxdev path ~/.local/share/noctalia-dev
-noctalia msg plugins enable gamaraan/mx-control
+```sh
+noctalia msg panel-toggle gamaraan/mx-control:panel
 ```
 
-Then add **MX Control** to a bar in Settings → Bar. Left click opens the panel, right
-click reads the device again.
+The panel has five tabs:
 
-## Panel
-
-- **Point & scroll** – DPI (a slider when the device reports an evenly spaced DPI
-  list), pointer acceleration (system default or macOS-style, applied through Hyprland;
-  mice only), scroll wheel, thumb wheel, and any other device setting.
-- **Buttons & actions** – one group per button with its action and mode.
-- **Easy-Switch** – the paired hosts. Switching takes a second click, because it
-  sends the device to the other computer.
-- **Profiles** – named snapshots of the device's settings, including pointer
-  acceleration, to save, apply and delete.
+- **Point & scroll** – DPI (a slider when the device reports an evenly spaced DPI list),
+  pointer acceleration (system default or macOS-style, mice only), scroll wheel and thumb
+  wheel settings, and any other setting the device reports.
+- **Buttons & actions** – one group per button with its hardware action and mode
+  (regular, diverted, gestures). A button's mode is locked while it has a shortcut.
+- **Easy-Switch** – the paired hosts. Switching takes a second click, because it sends the
+  device to the other computer.
+- **Profiles** – named snapshots of the device's settings, including pointer acceleration,
+  to save, apply and delete.
 - **Shortcuts** – give a divertable button a shortcut, a sequence of up to eight, or four
-  directional gestures, for all apps or as a per-app override. Shortcuts are sent to the
-  focused window through Hyprland. A button's Mode must be Regular to take a shortcut,
-  and stays locked while it has one.
+  directional gestures, for all apps or as a per-app override. Shortcuts go to the focused
+  window. A button's mode must be Regular to take one.
 
-Profiles, pointer preferences and shortcuts live in `~/.config/omarchy-mx/`, the
-helper's directory, so ones saved with the Omarchy plugin carry over.
+Every setting is drawn from the kind the helper reports, so settings this plugin has no
+special code for still get a control.
 
-Every setting is drawn from the kind the helper reports, so settings this plugin has
-no special code for still get a control.
+## Settings
 
-## How it works
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `show_value` | `bool` | `true` | Show the battery percentage next to the mouse icon in the bar. |
 
-The service is the only entry that runs processes. It keeps `backend/mxctl.py serve`
-running, publishes `$XDG_RUNTIME_DIR/omarchy-mx/status.json` to the widget and panel
-through Noctalia's shared state, and turns panel commands into `cmd-*.json` spool files
-that `serve` picks up through inotify.
+## IPC
+
+```sh
+noctalia msg plugin gamaraan/mx-control:service all refresh
+```
+
+Reads the devices again, the same as right-clicking the capsule.
+
+## Notes
+
+- **Processes:** the service runs `python3 backend/mxctl.py runtime-dir`, then keeps
+  `python3 backend/mxctl.py serve` running in the background (restarted when its heartbeat
+  stops, stopped with `pkill` when the plugin is disabled or the shell exits). It runs
+  `hyprctl -j clients` when the Shortcuts tab opens. The panel and widget spawn nothing.
+- **Files:** the helper writes `status.json` and short-lived `cmd-*.json` command files in
+  `$XDG_RUNTIME_DIR/omarchy-mx/` (mode 0700), and profiles, pointer preferences and
+  shortcuts in `~/.config/omarchy-mx/` (mode 0600). Profiles and shortcuts saved with the
+  Omarchy plugin carry over.
+- **Devices and compositor:** the helper opens Logitech `/dev/hidraw*` devices and reads
+  sysfs. Shortcuts and pointer acceleration go through Hyprland's IPC socket. There is no
+  network access.
 
 ## Development
 

@@ -57,6 +57,29 @@ check("pickDevice falls back to the first online device", shared.pickDevice(stat
 check("pickDevice without devices is nil", shared.pickDevice({ devices = {} }) == nil)
 check("pickDevice without a status is nil", shared.pickDevice(nil) == nil)
 
+-- lowestDevice
+local levels = { devices = {
+    { id = "A", name = "Mouse", online = true, battery = { level = 80 } },
+    { id = "B", name = "Keyboard", online = true, battery = { level = 35 } },
+    { id = "C", name = "Offline", online = false, battery = { level = 5 } },
+} }
+check("lowestDevice picks the lowest online level", shared.lowestDevice(levels).id == "B")
+check("lowestDevice ignores an offline device", shared.lowestDevice(levels).id ~= "C")
+check("lowestDevice falls back to the first online device without levels",
+    shared.lowestDevice({ devices = { { id = "A", online = true }, { id = "B", online = true } } }).id == "A")
+check("lowestDevice without devices is nil", shared.lowestDevice({ devices = {} }) == nil)
+check("lowestDevice without a status is nil", shared.lowestDevice(nil) == nil)
+
+-- devicesByLevel
+local ordered = shared.devicesByLevel(levels)
+check("devicesByLevel sorts known levels ascending, offline last",
+    ordered[1].id == "B" and ordered[2].id == "A" and ordered[3].id == "C")
+local noLevels = shared.devicesByLevel({ devices = {
+    { id = "A", name = "Zeta" }, { id = "B", name = "Alpha" },
+} })
+check("devicesByLevel orders devices without levels by name",
+    noLevels[1].id == "B" and noLevels[2].id == "A")
+
 -- controlFor
 local c = shared.controlFor(invert)
 check("toggle maps to a toggle", c.type == "toggle" and c.value == false)
@@ -172,7 +195,17 @@ check("a stale snapshot wins over its old permission error",
 check("no snapshot means the helper must start", shared.helperNeedsStart(nil, 1000))
 check("a heartbeat within 90 s means it is alive", not shared.helperNeedsStart(1000, 1089))
 check("a snapshot older than 90 s means it died", shared.helperNeedsStart(1000, 1091))
-check("the helper pattern is anchored to a real serve process", shared.HELPER_PATTERN == "^python3 [^ ]*/mxctl\\.py serve$")
+-- pkill -f matches HELPER_PATTERN as an ERE against the full command line.
+local function helperMatches(cmdline)
+    local p = io.popen("printf '%s\\n' '" .. cmdline .. "' | grep -Ec '" .. shared.HELPER_PATTERN .. "'")
+    local n = p:read("*n")
+    p:close()
+    return n == 1
+end
+check("the helper pattern matches serve run by bare name", helperMatches("python3 /x/mx-control/backend/mxctl.py serve"))
+check("the helper pattern matches serve run by path", helperMatches("/usr/bin/python3 /usr/share/noctalia/plugins/mx-control/backend/mxctl.py serve"))
+check("the helper pattern skips a shell that mentions serve", not helperMatches("bash -c python3 /x/mxctl.py serve"))
+check("the helper pattern skips other mxctl commands", not helperMatches("/usr/bin/python3 /x/mxctl.py status"))
 
 -- sectionFor
 check("dpi is a pointer setting", shared.sectionFor("dpi") == "pointer")
